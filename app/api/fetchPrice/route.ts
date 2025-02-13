@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import puppeteer, { Browser, Page } from "puppeteer";
+import puppeteer from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
 import { buildings } from "../../data/buildings"; // Import orașele și districtele
 
 // Definim tipul pentru un anunț OLX
@@ -97,7 +98,13 @@ export async function GET(req: Request) {
   const baseOlxUrl_SALE = `https://www.olx.ro/imobiliare/apartamente-garsoniere-de-vanzare/q-${encodeURIComponent(name)}/?currency=EUR`;
   const baseOlxUrl_RENT = `https://www.olx.ro/imobiliare/apartamente-garsoniere-de-inchiriat/q-${encodeURIComponent(name)}/?currency=EUR`;
 
-  const browser: Browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-setuid-sandbox"] });
+  const browser = await puppeteer.launch({
+    args: chromium.args,
+    defaultViewport: chromium.defaultViewport,
+    executablePath: await chromium.executablePath(),
+    headless: chromium.headless,
+});
+
   const page: Page = await browser.newPage();
 
   try {
