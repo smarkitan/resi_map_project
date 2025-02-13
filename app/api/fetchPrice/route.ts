@@ -2,32 +2,6 @@ import { NextResponse } from "next/server";
 import puppeteer, { Browser, Page } from "puppeteer";
 import { buildings } from "../../data/buildings"; // Import orașele și districtele
 
-import puppeteer from "puppeteer";
-
-export async function GET(req) {
-    try {
-        const browser = await puppeteer.launch({
-            headless: "new",
-            args: ["--no-sandbox", "--disable-setuid-sandbox"],
-        });
-
-        const page = await browser.newPage();
-        await page.goto("https://example.com");
-        await browser.close();
-
-        return new Response(JSON.stringify({ success: true }), {
-            headers: { "Content-Type": "application/json" },
-            status: 200,
-        });
-    } catch (error) {
-        return new Response(JSON.stringify({ error: error.message }), {
-            headers: { "Content-Type": "application/json" },
-            status: 500,
-        });
-    }
-}
-
-
 // Definim tipul pentru un anunț OLX
 interface Listing {
   price: string;
@@ -108,6 +82,7 @@ const fetchListings = async (page: Page, baseUrl: string): Promise<Listing[]> =>
     .filter((listing) => isValidArea(listing.area) && matchesLocation(listing.location));
 };
 
+// Funcția GET pentru API-ul de prețuri
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const address: string | null = searchParams.get("address");
@@ -122,7 +97,7 @@ export async function GET(req: Request) {
   const baseOlxUrl_SALE = `https://www.olx.ro/imobiliare/apartamente-garsoniere-de-vanzare/q-${encodeURIComponent(name)}/?currency=EUR`;
   const baseOlxUrl_RENT = `https://www.olx.ro/imobiliare/apartamente-garsoniere-de-inchiriat/q-${encodeURIComponent(name)}/?currency=EUR`;
 
-  const browser: Browser = await puppeteer.launch({ headless: true });
+  const browser: Browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox", "--disable-setuid-sandbox"] });
   const page: Page = await browser.newPage();
 
   try {
