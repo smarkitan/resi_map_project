@@ -1,6 +1,7 @@
 {
+  "version": 2,
   "functions": {
-    "app/api/fetchPrice": {
+    "api/fetchPrice": {
       "runtime": "nodejs18.x"
     }
   }
