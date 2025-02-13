@@ -1,7 +1,7 @@
 {
   "functions": {
     "api/fetchPrice": {
-      "includeFiles": "node_modules/puppeteer/.local-chromium/**"
+      "includeFiles": "node_modules/chrome-aws-lambda/**"
     }
   }
 }
