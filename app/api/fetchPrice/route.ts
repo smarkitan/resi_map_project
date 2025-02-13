@@ -2,6 +2,32 @@ import { NextResponse } from "next/server";
 import puppeteer, { Browser, Page } from "puppeteer";
 import { buildings } from "../../data/buildings"; // Import orașele și districtele
 
+import puppeteer from "puppeteer";
+
+export async function GET(req) {
+    try {
+        const browser = await puppeteer.launch({
+            headless: "new",
+            args: ["--no-sandbox", "--disable-setuid-sandbox"],
+        });
+
+        const page = await browser.newPage();
+        await page.goto("https://example.com");
+        await browser.close();
+
+        return new Response(JSON.stringify({ success: true }), {
+            headers: { "Content-Type": "application/json" },
+            status: 200,
+        });
+    } catch (error) {
+        return new Response(JSON.stringify({ error: error.message }), {
+            headers: { "Content-Type": "application/json" },
+            status: 500,
+        });
+    }
+}
+
+
 // Definim tipul pentru un anunț OLX
 interface Listing {
   price: string;
