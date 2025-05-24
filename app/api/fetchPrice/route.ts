@@ -73,7 +73,7 @@ const fetchListings = async (page: Page, baseUrl: string, debugMode = false): Pr
 
   const cleaned = listings
     .map((listing) => ({ ...listing, price: cleanPriceText(listing.price) }))
-    .filter((listing) => isValidArea(listing.area) && matchesLocation(listing.location));
+    .filter((listing) => isValidArea(listing.area) );
 
   console.log(`🔍 Filtered valid listings: ${cleaned.length}`);
   return cleaned;
