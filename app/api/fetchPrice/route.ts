@@ -9,7 +9,7 @@ interface Listing {
   location: string;
   url: string;
 }
-
+ 
 // Funcție pentru curățarea prețului
 const cleanPriceText = (price: string): string => {
   return price.replace("Prețul e negociabil", "").trim();
