@@ -32,9 +32,9 @@ const matchesLocation = (text: string): boolean => {
 const extractListingsFromPage = async (page: Page): Promise<Listing[]> => {
   return await page.evaluate(() => {
     return Array.from(document.querySelectorAll("div[data-cy='l-card']")).map((el) => {
-      const priceElement = el.querySelector(".css-6j1qjp");
-      const areaElement = el.querySelector(".css-6as4g5");
-      const locationElement = el.querySelector(".css-1mwdrlh");
+      const priceElement = el.querySelector(".css-uj7mm0");
+      const areaElement = el.querySelector(".css-156kzg6");
+      const locationElement = el.querySelector(".css-vbz67q");
       const linkElement = el.querySelector("a");
 
       const areaText = areaElement ? areaElement.textContent!.trim() : "N/A";
