@@ -31,24 +31,26 @@ const matchesLocation = (text: string): boolean => {
 // Funcție pentru extragerea anunțurilor de pe o pagină OLX
 const extractListingsFromPage = async (page: Page): Promise<Listing[]> => {
   return await page.evaluate(() => {
-    const cards = Array.from(document.querySelectorAll("div[data-cy='l-card']"));
-    
-    return cards.map((el) => {
-      const priceElement = el.querySelector("[data-testid='ad-price']") || el.querySelector("p[class*='price']");
-      const areaElement = el.querySelector("span:contains('m²')") || el.querySelector("li:contains('m²')");
-      const locationElement = el.querySelector("[data-testid='location-date']") || el.querySelector("span[class*='location']");
-      const linkElement = el.querySelector("a[href*='/d/oferta/']");
-      const titleElement = el.querySelector("h6") || el.querySelector("h3");
+    return Array.from(document.querySelectorAll("div[data-cy='l-card']")).map((el) => {
+      const priceElement = el.querySelector(".css-uj7mm0");
+      const areaElement = el.querySelector(".css-156kzg6");
+      const locationElement = el.querySelector(".css-vbz67q");
+      const linkElement = el.querySelector("a");
+
+      const areaText = areaElement ? areaElement.textContent!.trim() : "N/A";
+      const locationText = locationElement ? locationElement.textContent!.trim() : "N/A";
 
       return {
-        price: priceElement?.textContent?.trim() || "N/A",
-        area: areaElement?.textContent?.trim() || "N/A",
-        location: locationElement?.textContent?.trim() || "N/A",
-        url: linkElement?.getAttribute("href")?.startsWith("/")
-          ? `https://www.olx.ro${linkElement.getAttribute("href")}`
-          : linkElement?.getAttribute("href") || "",
+        price: priceElement ? priceElement.textContent!.trim() : "N/A",
+        area: areaText,
+        location: locationText,
+        url: linkElement
+          ? linkElement.getAttribute("href")?.startsWith("/")
+            ? `https://www.olx.ro${linkElement.getAttribute("href")}`
+            : linkElement.getAttribute("href")!
+          : "",
       };
-    }).filter(l => l.price !== "N/A" && l.url); // Exclude incomplete items
+    });
   });
 };
 
