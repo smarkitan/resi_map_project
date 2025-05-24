@@ -62,8 +62,9 @@ const fetchListings = async (page: Page, baseUrl: string): Promise<Listing[]> =>
     const olxUrl = `${baseUrl}&page=${i}`;
     console.log(`🔎 Accessing page ${i}: ${olxUrl}`);
 
-    await page.goto(olxUrl, { waitUntil: "networkidle2" });
-
+    await page.goto(olxUrl, { waitUntil: "networkidle2", timeout: 15000 });
+    await page.waitForSelector("div[data-cy='l-card']", { timeout: 10000 });
+    
     console.log(`⏳ Extracting listings from page ${i}...`);
     const listings = await extractListingsFromPage(page);
 
