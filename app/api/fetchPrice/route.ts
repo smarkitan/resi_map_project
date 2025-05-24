@@ -105,16 +105,16 @@ export async function GET(req: Request) {
 
     const page: Page = await browser.newPage();
 
-    const saleListings = await fetchListings(page, baseOlxUrl_SALE);
-    console.log(`✅ Found ${saleListings.length} sale listings`);
+    // doar vânzări pentru a evita timeout
+const saleListings = await fetchListings(page, baseOlxUrl_SALE);
+console.log(`✅ Found ${saleListings.length} sale listings`);
 
-    const rentListings = await fetchListings(page, baseOlxUrl_RENT);
-    console.log(`✅ Found ${rentListings.length} rental listings`);
+return NextResponse.json({
+  sale: saleListings,
+  rent: [], // ignorăm închirierea momentan
+});
 
-    return NextResponse.json({
-      sale: saleListings,
-      rent: rentListings,
-    });
+
 
   } catch (error) {
     console.error("🔥 Error scraping OLX:", error);
