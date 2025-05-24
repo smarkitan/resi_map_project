@@ -9,68 +9,64 @@ interface Listing {
   location: string;
   url: string;
 }
- 
-// Funcție pentru curățarea prețului
+
+// Curățăm prețul
 const cleanPriceText = (price: string): string => {
   return price.replace("Prețul e negociabil", "").trim();
 };
 
-// Funcție pentru validarea suprafeței (2-4 cifre urmate de "m²")
+// Validăm suprafața (ex: 60 m²)
 const isValidArea = (area: string): boolean => {
   return /^\d{2,4}\s?m²$/.test(area);
 };
 
-// Funcție pentru verificarea locației în clasa css-1mwdrlh
+// Verificăm dacă locația se potrivește cu orașele/districtele relevante
 const matchesLocation = (text: string): boolean => {
   const locations = buildings.flatMap((building) => [building.city, building.district])
                              .map((loc) => loc.toLowerCase());
-
   return locations.some((loc) => text.toLowerCase().includes(loc));
 };
 
-// Funcție pentru extragerea anunțurilor de pe o pagină OLX
+// Extragem anunțurile de pe o pagină OLX
 const extractListingsFromPage = async (page: Page): Promise<Listing[]> => {
   return await page.evaluate(() => {
-    return Array.from(document.querySelectorAll("div[data-cy='l-card']")).map((el) => {
-      const priceElement = el.querySelector(".css-uj7mm0");
-      const areaElement = el.querySelector(".css-156kzg6");
-      const locationElement = el.querySelector(".css-vbz67q");
-      const linkElement = el.querySelector("a");
+    const cards = Array.from(document.querySelectorAll("div[data-cy='l-card']"));
 
-      const areaText = areaElement ? areaElement.textContent!.trim() : "N/A";
-      const locationText = locationElement ? locationElement.textContent!.trim() : "N/A";
+    return cards.map((el) => {
+      const priceElement = el.querySelector("[data-testid='ad-price']") || el.querySelector("p[class*='price']");
+      const areaElement = Array.from(el.querySelectorAll("li")).find(li => li.textContent?.includes("m²"));
+      const locationElement = el.querySelector("[data-testid='location-date']") || el.querySelector("span[class*='location']");
+      const linkElement = el.querySelector("a[href*='/d/oferta/']");
+
+      const areaText = areaElement?.textContent?.trim() ?? "N/A";
+      const locationText = locationElement?.textContent?.trim() ?? "N/A";
+      const urlRaw = linkElement?.getAttribute("href") || "";
 
       return {
-        price: priceElement ? priceElement.textContent!.trim() : "N/A",
+        price: priceElement?.textContent?.trim() ?? "N/A",
         area: areaText,
         location: locationText,
-        url: linkElement
-          ? linkElement.getAttribute("href")?.startsWith("/")
-            ? `https://www.olx.ro${linkElement.getAttribute("href")}`
-            : linkElement.getAttribute("href")!
-          : "",
+        url: urlRaw.startsWith("/") ? `https://www.olx.ro${urlRaw}` : urlRaw,
       };
-    });
+    }).filter((l) => l.price !== "N/A" && l.url);
   });
 };
 
-
-// Funcție pentru căutarea anunțurilor pe OLX (2 pagini)
+// Căutăm anunțuri de vânzare/închiriere (max. 1 pagină pentru performanță)
 const fetchListings = async (page: Page, baseUrl: string): Promise<Listing[]> => {
   let allListings: Listing[] = [];
 
-  for (let i = 1; i <= 2; i++) {
+  for (let i = 1; i <= 1; i++) {
     const olxUrl = `${baseUrl}&page=${i}`;
     console.log(`🔎 Accessing page ${i}: ${olxUrl}`);
 
-    await page.goto(olxUrl, { waitUntil: "networkidle2", timeout: 15000 });
+    await page.goto(olxUrl, { waitUntil: "networkidle2", timeout: 20000 });
     await page.waitForSelector("div[data-cy='l-card']", { timeout: 10000 });
-    
+
     console.log(`⏳ Extracting listings from page ${i}...`);
     const listings = await extractListingsFromPage(page);
 
     console.log(`✅ Found ${listings.length} listings on page ${i}`);
-
     allListings = allListings.concat(listings);
   }
 
@@ -84,6 +80,7 @@ const fetchListings = async (page: Page, baseUrl: string): Promise<Listing[]> =>
     .filter((listing) => isValidArea(listing.area) && matchesLocation(listing.location));
 };
 
+// Handler API route
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const address: string | null = searchParams.get("address");
@@ -98,12 +95,16 @@ export async function GET(req: Request) {
   const baseOlxUrl_SALE = `https://www.olx.ro/imobiliare/apartamente-garsoniere-de-vanzare/q-${encodeURIComponent(name)}/?currency=RON`;
   const baseOlxUrl_RENT = `https://www.olx.ro/imobiliare/apartamente-garsoniere-de-inchiriat/q-${encodeURIComponent(name)}/?currency=RON`;
 
-const browser: Browser = await puppeteer.connect({
-  browserWSEndpoint: `wss://chrome.browserless.io?token=${process.env.BROWSERLESS_API_KEY}`,
-});
-  const page: Page = await browser.newPage();
+  let browser: Browser | null = null;
 
   try {
+    console.log("🚀 Connecting to Browserless...");
+    browser = await puppeteer.connect({
+      browserWSEndpoint: `wss://chrome.browserless.io?token=${process.env.BROWSERLESS_API_KEY}`,
+    });
+
+    const page: Page = await browser.newPage();
+
     const saleListings = await fetchListings(page, baseOlxUrl_SALE);
     console.log(`✅ Found ${saleListings.length} sale listings`);
 
@@ -114,13 +115,18 @@ const browser: Browser = await puppeteer.connect({
       sale: saleListings,
       rent: rentListings,
     });
+
   } catch (error) {
-    console.error(`🔥 Error scraping OLX:`, error);
+    console.error("🔥 Error scraping OLX:", error);
     return NextResponse.json({
       sale: [],
       rent: [],
+      error: error instanceof Error ? error.message : "Unknown error"
     });
   } finally {
-    await browser.close();
+    if (browser) {
+      console.log("🔴 Closing browser...");
+      await browser.close();
+    }
   }
 }
